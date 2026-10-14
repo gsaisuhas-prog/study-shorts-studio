@@ -1,0 +1,2126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StudyShorts Studio — Turn Study Notes & PDFs into 9:16 Vertical Revision Videos</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #fff1f2 0%, #f0f9ff 45%, #fefce8 100%);
+      color: #0f172a;
+      overflow-x: hidden;
+    }
+    .font-mono-code {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    /* Custom Bright Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    .phone-frame {
+      aspect-ratio: 9 / 16;
+      max-height: 620px;
+      width: auto;
+      box-shadow: 0 25px 60px -12px rgba(99, 102, 241, 0.28), 0 0 0 6px #ffffff, 0 0 0 8px rgba(226, 232, 240, 0.9);
+    }
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(99, 102, 241, 0.16);
+      box-shadow: 0 12px 32px -8px rgba(15, 23, 42, 0.07);
+    }
+    .scene-card-active {
+      border-color: #ec4899 !important;
+      background: linear-gradient(135deg, rgba(253, 242, 248, 0.95), rgba(238, 242, 255, 0.95)) !important;
+      box-shadow: 0 8px 20px -4px rgba(236, 72, 153, 0.22);
+    }
+    .dropzone-hover {
+      border-color: #8b5cf6 !important;
+      background: rgba(139, 92, 246, 0.08) !important;
+    }
+    .feed-pill-active {
+      background: linear-gradient(135deg, #6366f1, #ec4899) !important;
+      color: #ffffff !important;
+      border-color: transparent !important;
+      box-shadow: 0 6px 16px -3px rgba(236, 72, 153, 0.35);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col text-slate-900 selection:bg-pink-500 selection:text-white relative">
+
+  <!-- Decorative Bright Pastel Background Blobs -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden -z-10">
+    <div class="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-pink-300/30 blur-3xl"></div>
+    <div class="absolute top-1/3 -right-24 w-96 h-96 rounded-full bg-sky-300/30 blur-3xl"></div>
+    <div class="absolute -bottom-24 left-1/3 w-96 h-96 rounded-full bg-amber-300/30 blur-3xl"></div>
+  </div>
+
+  <!-- Top Navigation Bar with All Upload & Tool Options on Top -->
+  <header class="sticky top-0 z-40 border-b border-indigo-100 bg-white/90 backdrop-blur-md shadow-sm">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2">
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-2.5 shrink-0">
+        <button id="btnLogoHome" type="button" class="flex items-center gap-2.5 text-left group">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pink-500 via-violet-500 to-amber-400 flex items-center justify-center shadow-md shadow-pink-500/25 group-hover:scale-105 transition">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+            </svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <h1 class="font-extrabold text-base sm:text-lg tracking-tight text-slate-900">StudyShorts <span class="bg-gradient-to-r from-violet-600 to-pink-500 bg-clip-text text-transparent">Studio</span></h1>
+              <span class="hidden md:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">9:16 Feed</span>
+            </div>
+            <p class="text-[11px] text-slate-500 hidden sm:block">Instant vertical revision videos from your study notes</p>
+          </div>
+        </button>
+      </div>
+
+      <!-- Top Action Bar: Watch Shorts | Upload Study Files | Scene Timeline | Saved Library -->
+      <nav class="flex items-center bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 gap-1">
+        <button id="btnWatchShorts" type="button" class="px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all bg-gradient-to-r from-violet-600 to-pink-500 text-white shadow-sm flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          <span>Shorts Feed</span>
+        </button>
+
+        <button id="tabBtnStudio" type="button" class="px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all text-slate-700 hover:bg-white hover:text-violet-600 flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-pink-500" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+          </svg>
+          <span>1. Studio &amp; Upload</span>
+        </button>
+
+        <button id="tabBtnTimeline" type="button" class="px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all text-slate-700 hover:bg-white hover:text-violet-600 flex items-center gap-1">
+          2. Scene Timeline (<span id="sceneCountBadge">5</span>)
+        </button>
+
+        <button id="tabBtnLibrary" type="button" class="px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all text-slate-700 hover:bg-white hover:text-violet-600 flex items-center gap-1">
+          3. Saved Reels (<span id="savedCountBadge">0</span>)
+        </button>
+      </nav>
+
+      <!-- Quick Save & Export Video Buttons -->
+      <div class="flex items-center gap-2 shrink-0">
+        <button id="btnSaveDeck" type="button" class="px-3 py-2 rounded-xl text-xs font-bold bg-white hover:bg-indigo-50 text-slate-700 border border-slate-200 shadow-sm transition flex items-center gap-1.5" title="Save current video reel to browser library">
+          <svg class="w-4 h-4 text-pink-500" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+          </svg>
+          <span class="hidden md:inline">Save Reel</span>
+        </button>
+        <button id="btnExportVideo" type="button" class="px-3.5 py-2 rounded-xl text-xs font-extrabold bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500 hover:from-emerald-500 hover:to-cyan-600 text-white shadow-md shadow-teal-500/25 transition flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+          </svg>
+          <span id="exportBtnText">Export .WebM</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- TOP DROP-DOWN DRAWER / MODAL PANELS (Opens when Upload Files, Edit Scenes, or Saved is clicked on top) -->
+  <div id="topDrawerBackdrop" class="hidden fixed inset-0 z-30 bg-slate-900/30 backdrop-blur-xs transition-opacity"></div>
+
+  <div id="topDrawerContainer" class="hidden sticky top-16 z-30 max-w-5xl w-full mx-auto px-4 pt-3 pb-2">
+    <!-- Close Drawer Bar -->
+    <div class="flex items-center justify-between bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 text-white px-5 py-2.5 rounded-t-2xl shadow-lg">
+      <div class="flex items-center gap-2 text-xs sm:text-sm font-bold">
+        <span id="drawerTitleLabel">Upload Study Materials & Customize Short</span>
+      </div>
+      <button id="btnCloseDrawer" type="button" class="px-3 py-1 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition flex items-center gap-1">
+        <span>Back to Shorts Player</span>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- VIEW 1: UPLOAD & GENERATION STUDIO (Inside Top Drawer) -->
+    <section id="viewStudio" class="hidden glass-panel rounded-b-3xl p-5 sm:p-6 space-y-5 max-h-[80vh] overflow-y-auto border-t-0">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Left half: File Upload + Study Notes -->
+        <div class="lg:col-span-7 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                <span class="w-6 h-6 rounded-lg bg-pink-100 text-pink-600 flex items-center justify-center text-xs font-black">1</span>
+                Upload Study Files or Paste Notes
+              </h2>
+              <p class="text-xs text-slate-500 mt-0.5">Select a PDF lecture handout, Markdown/TXT file, or paste your study notes below</p>
+            </div>
+            <span id="uploadStatusPill" class="px-3 py-1 rounded-full text-[11px] font-bold bg-violet-100 text-violet-700 border border-violet-200">
+              Ready for upload
+            </span>
+          </div>
+
+          <!-- Bright Drag and Drop File Zone -->
+          <div id="dropZone" class="border-2 border-dashed border-violet-300 hover:border-pink-500 rounded-2xl p-5 text-center transition cursor-pointer bg-gradient-to-br from-violet-50/70 via-pink-50/50 to-amber-50/60">
+            <input id="fileInput" type="file" accept=".pdf,.txt,.md,.csv,.json" class="hidden" />
+            <div class="flex flex-col items-center justify-center space-y-2">
+              <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-violet-600 to-pink-500 flex items-center justify-center text-white shadow-md shadow-pink-500/20">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                </svg>
+              </div>
+              <div class="text-xs sm:text-sm text-slate-800 font-bold">
+                <span class="text-violet-600 underline">Click to choose a study file</span> or drag & drop here
+              </div>
+              <p class="text-[11px] text-slate-500">Supports <span class="text-violet-700 font-mono-code font-bold">.PDF</span>, <span class="text-pink-600 font-mono-code font-bold">.TXT</span>, and <span class="text-amber-600 font-mono-code font-bold">.MD</span> study materials</p>
+            </div>
+          </div>
+
+          <!-- Topic Title & Study Material Textarea -->
+          <div class="space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="sm:col-span-2">
+                <label for="inputTopicTitle" class="block text-xs font-bold text-slate-700 mb-1">Topic / Lecture Title</label>
+                <input id="inputTopicTitle" type="text" value="Deadlock Conditions & Banker's Algorithm" placeholder="e.g., Operating Systems: Deadlocks" class="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-sm text-slate-900 font-medium focus:outline-none focus:border-violet-500" />
+              </div>
+              <div>
+                <label for="inputSubjectTag" class="block text-xs font-bold text-slate-700 mb-1">Course / Subject Tag</label>
+                <input id="inputSubjectTag" type="text" value="CSE2005 • OS Revision" placeholder="e.g., CSE2005 • Module 4" class="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-sm text-slate-900 font-medium focus:outline-none focus:border-violet-500" />
+              </div>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label for="inputStudyNotes" class="text-xs font-bold text-slate-700">Study Notes / Extracted Text</label>
+                <div class="flex items-center gap-3">
+                  <span id="wordCountStats" class="text-[11px] text-slate-500 font-mono-code">0 words</span>
+                  <button id="btnClearText" type="button" class="text-xs font-semibold text-rose-500 hover:text-rose-600 transition">Clear Notes</button>
+                </div>
+              </div>
+              <textarea id="inputStudyNotes" rows="5" placeholder="Paste your lecture notes, textbook paragraphs, bullet points, or upload a PDF above..." class="w-full p-3 rounded-xl bg-white border border-slate-300 text-xs sm:text-sm text-slate-800 leading-relaxed focus:outline-none focus:border-violet-500"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right half: Style Customization & Generate Button -->
+        <div class="lg:col-span-5 flex flex-col justify-between bg-gradient-to-br from-indigo-50/80 via-purple-50/60 to-pink-50/80 rounded-2xl p-4 sm:p-5 border border-indigo-100 space-y-4">
+          <div class="space-y-4">
+            <h2 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+              <span class="w-6 h-6 rounded-lg bg-violet-100 text-violet-600 flex items-center justify-center text-xs font-black">2</span>
+              Customize Video Look & Voice
+            </h2>
+
+            <div>
+              <label for="selectReelMode" class="block text-xs font-bold text-slate-700 mb-1">Reel Structure Mode</label>
+              <select id="selectReelMode" class="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-xs sm:text-sm text-slate-900 font-semibold focus:outline-none focus:border-violet-500">
+                <option value="explainer">Concept Explainer + Quiz (6 Scenes)</option>
+                <option value="blitz">60-Second Exam Blitz (Fast Pacing)</option>
+                <option value="flashcard">Rapid Recall Q&A Reel</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="selectVisualTheme" class="block text-xs font-bold text-slate-700 mb-1">Short Color Theme</label>
+              <select id="selectVisualTheme" class="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-xs sm:text-sm text-slate-900 font-semibold focus:outline-none focus:border-violet-500">
+                <option value="cyber">Electric Berry & Indigo Pop (Bright)</option>
+                <option value="sunset">Sunny Coral & Amber Glow</option>
+                <option value="matrix">Mint Emerald & Teal Splash</option>
+                <option value="blueprint">Sky Royal & Crisp Cyan</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="selectCaptionStyle" class="block text-xs font-bold text-slate-700 mb-1">Kinetic Caption Preset</label>
+              <select id="selectCaptionStyle" class="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-xs sm:text-sm text-slate-900 font-semibold focus:outline-none focus:border-violet-500">
+                <option value="tiktok">Creator Pop (Yellow Word Highlight)</option>
+                <option value="glass">Frosted Pill Subtitle</option>
+                <option value="terminal">Code Ticker Style</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="selectVoiceRate" class="block text-xs font-bold text-slate-700 mb-1">Voiceover Speed (<span id="rateLabel">1.1x</span>)</label>
+              <input id="selectVoiceRate" type="range" min="0.85" max="1.45" step="0.05" value="1.1" class="w-full accent-pink-500 cursor-pointer" />
+            </div>
+
+            <div class="flex flex-col gap-2 pt-1">
+              <label class="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+                <input id="toggleVoiceover" type="checkbox" checked class="w-4 h-4 rounded accent-violet-600 cursor-pointer" />
+                <span>Speak Voiceover Narration (TTS)</span>
+              </label>
+              <label class="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+                <input id="toggleBgSynth" type="checkbox" checked class="w-4 h-4 rounded accent-violet-600 cursor-pointer" />
+                <span>Play Transition Chimes</span>
+              </label>
+            </div>
+          </div>
+
+          <button id="btnGenerateReel" type="button" class="w-full py-3.5 px-5 rounded-2xl font-extrabold text-sm bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-500 hover:from-violet-500 hover:to-orange-400 text-white shadow-xl shadow-fuchsia-500/25 transition flex items-center justify-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+            <span>Generate 9:16 Vertical Study Reel from Notes</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: INTERACTIVE SCENE TIMELINE & SCRIPT EDITOR (Inside Top Drawer) -->
+    <section id="viewTimeline" class="hidden glass-panel rounded-b-3xl p-5 sm:p-6 space-y-4 max-h-[80vh] overflow-y-auto border-t-0">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 class="text-base font-extrabold text-slate-900">Interactive Scene Storyboard & Script</h2>
+          <p class="text-xs text-slate-500">Click any scene below to edit its voiceover script, headline, or diagram nodes</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btnAddScene" type="button" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-violet-100 hover:bg-violet-200 text-violet-700 border border-violet-200 transition">
+            + Add Scene
+          </button>
+          <button id="btnExportSrt" type="button" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition">
+            Download .SRT Captions
+          </button>
+        </div>
+      </div>
+
+      <!-- Active Scene Editor Form -->
+      <div class="p-4 rounded-2xl bg-gradient-to-r from-violet-50/90 to-pink-50/90 border border-violet-200/80 space-y-3">
+        <div class="flex items-center justify-between">
+          <span id="editingSceneBadge" class="text-xs font-extrabold uppercase tracking-wider text-violet-700">Editing Scene 1</span>
+          <button id="btnDeleteScene" type="button" class="text-xs text-rose-600 hover:text-rose-700 font-bold transition">Delete Scene</button>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label for="editSceneTag" class="block text-[11px] font-bold text-slate-600 mb-1">Scene Role Tag</label>
+            <input id="editSceneTag" type="text" class="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-xs text-slate-900 font-semibold focus:outline-none focus:border-violet-500" />
+          </div>
+          <div>
+            <label for="editSceneHeadline" class="block text-[11px] font-bold text-slate-600 mb-1">On-Screen Headline</label>
+            <input id="editSceneHeadline" type="text" class="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-xs text-slate-900 font-semibold focus:outline-none focus:border-violet-500" />
+          </div>
+          <div>
+            <label for="editSceneDiagram" class="block text-[11px] font-bold text-slate-600 mb-1">Visual Diagram Type</label>
+            <select id="editSceneDiagram" class="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-xs text-slate-900 font-semibold focus:outline-none focus:border-violet-500">
+              <option value="hook">Hook Impact Badge</option>
+              <option value="flowchart">Animated Step Flowchart</option>
+              <option value="pillars">Key Pillars Grid</option>
+              <option value="code">Formula / Pseudo-Code Card</option>
+              <option value="quiz">Rapid Countdown Quiz</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label for="editSceneNarration" class="block text-[11px] font-bold text-slate-600 mb-1">Voiceover Script & Kinetic Captions</label>
+          <textarea id="editSceneNarration" rows="2" class="w-full p-2.5 rounded-xl bg-white border border-slate-300 text-xs text-slate-800 font-medium focus:outline-none focus:border-violet-500"></textarea>
+        </div>
+        <div>
+          <label for="editSceneBullets" class="block text-[11px] font-bold text-slate-600 mb-1">Diagram Nodes / Key Points (comma-separated)</label>
+          <input id="editSceneBullets" type="text" class="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-xs text-slate-800 font-medium focus:outline-none focus:border-violet-500" />
+        </div>
+      </div>
+
+      <!-- Scene Cards List -->
+      <div id="sceneListContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[260px] overflow-y-auto pr-1"></div>
+    </section>
+
+    <!-- VIEW 3: SAVED REELS LIBRARY (Inside Top Drawer) -->
+    <section id="viewLibrary" class="hidden glass-panel rounded-b-3xl p-5 sm:p-6 space-y-4 max-h-[80vh] overflow-y-auto border-t-0">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-extrabold text-slate-900">Saved Study Reels Library</h2>
+          <p class="text-xs text-slate-500">Click any saved study reel to play it immediately in the Shorts Feed</p>
+        </div>
+        <button id="btnExportJsonPack" type="button" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition">
+          Export JSON Storyboard
+        </button>
+      </div>
+      <div id="libraryGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+    </section>
+  </div>
+
+  <!-- ======================================================================= -->
+  <!-- MAIN HERO STAGE: OPENS DIRECTLY TO THE 9:16 SHORTS FEED EXPERIENCE      -->
+  <!-- ======================================================================= -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-4 flex flex-col items-center justify-center space-y-4">
+
+    <!-- Top Quick Topic Switcher Strip + Instant Upload Trigger -->
+    <div class="w-full glass-panel rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="text-xs font-extrabold uppercase tracking-wider text-violet-600 px-2">🔥 Trending Study Shorts:</span>
+        <button type="button" data-preset="os_deadlock" class="preset-btn feed-pill-active px-3 py-1.5 rounded-xl text-left bg-slate-100 hover:bg-violet-100 text-slate-700 border border-slate-200 transition">
+          <div class="text-[9px] font-bold uppercase opacity-80">Operating Systems</div>
+          <div class="text-xs font-extrabold">Deadlocks &amp; Coffman</div>
+        </button>
+        <button type="button" data-preset="cn_tcp" class="preset-btn px-3 py-1.5 rounded-xl text-left bg-slate-100 hover:bg-violet-100 text-slate-700 border border-slate-200 transition">
+          <div class="text-[9px] font-bold uppercase opacity-80">Computer Networks</div>
+          <div class="text-xs font-extrabold">TCP 3-Way Handshake</div>
+        </button>
+        <button type="button" data-preset="dbms_acid" class="preset-btn px-3 py-1.5 rounded-xl text-left bg-slate-100 hover:bg-violet-100 text-slate-700 border border-slate-200 transition">
+          <div class="text-[9px] font-bold uppercase opacity-80">Database Systems</div>
+          <div class="text-xs font-extrabold">ACID &amp; Isolation Levels</div>
+        </button>
+        <button type="button" data-preset="dsa_dp" class="preset-btn px-3 py-1.5 rounded-xl text-left bg-slate-100 hover:bg-violet-100 text-slate-700 border border-slate-200 transition">
+          <div class="text-[9px] font-bold uppercase opacity-80">Algorithms / DSA</div>
+          <div class="text-xs font-extrabold">Dynamic Programming</div>
+        </button>
+      </div>
+
+      <button id="btnQuickUploadTop" type="button" class="px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-gradient-to-r from-pink-500 to-orange-400 hover:from-pink-600 hover:to-orange-500 text-white shadow-md shadow-pink-500/20 transition flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+        </svg>
+        <span>+ Upload Your Own PDF / Notes</span>
+      </button>
+    </div>
+
+    <!-- Center Stage: 9:16 Vertical Short Player + Floating Creator Controls + Live Scene Strip -->
+    <div class="w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+
+      <!-- Left Info Card (Hidden on small mobile, visible on desktop: Shows Active Short Details & Concepts) -->
+      <div class="lg:col-span-4 order-2 lg:order-1 space-y-4">
+        <div class="glass-panel rounded-3xl p-5 space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="px-3 py-1 rounded-full text-xs font-extrabold bg-gradient-to-r from-violet-100 to-pink-100 text-violet-700 border border-violet-200" id="activeSubjectPill">
+              CSE2005 • Operating Systems
+            </span>
+            <span class="text-xs font-bold text-slate-500 font-mono-code" id="estTotalDuration">Est. Duration: ~30s</span>
+          </div>
+
+          <div>
+            <h2 id="activeReelTitleHeading" class="text-lg font-black text-slate-900 leading-snug">
+              Deadlock Conditions & Banker's Algorithm
+            </h2>
+            <p class="text-xs text-slate-500 mt-1">
+              Auto-generated 9:16 revision reel • Click any scene pill below to jump directly
+            </p>
+          </div>
+
+          <!-- Quick Scene Jump Pills -->
+          <div>
+            <div class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-2">Scenes in This Short:</div>
+            <div id="quickSceneJumpList" class="space-y-1.5"></div>
+          </div>
+
+          <!-- Detected Key Concepts -->
+          <div class="pt-2 border-t border-slate-100">
+            <div class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-2">Key Exam Concepts Extracted:</div>
+            <div id="detectedConceptsList" class="flex flex-wrap gap-1.5"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center Column: The 9:16 Vertical Shorts Player -->
+      <div class="lg:col-span-5 order-1 lg:order-2 flex flex-col items-center">
+        <div class="glass-panel rounded-[32px] p-4 sm:p-5 w-full flex flex-col items-center space-y-3.5">
+          <!-- Player Top Status Bar -->
+          <div class="w-full flex items-center justify-between text-xs px-1">
+            <div class="flex items-center gap-2">
+              <span id="liveStatusDot" class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span id="playerStateLabel" class="font-extrabold text-slate-700">9:16 Shorts Player</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span id="sceneCounterLabel" class="px-2.5 py-0.5 rounded-full bg-violet-100 text-violet-700 font-mono-code font-bold text-[11px]">Scene 1 / 6</span>
+              <button id="btnMuteAudio" type="button" class="p-1.5 rounded-xl bg-slate-100 hover:bg-violet-100 text-slate-700 transition" title="Mute / Unmute Audio">
+                <svg id="iconAudioUnmuted" class="w-4 h-4 text-violet-600" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+                </svg>
+                <svg id="iconAudioMuted" class="w-4 h-4 text-rose-500 hidden" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- 9:16 Vertical Phone Canvas Container -->
+          <div class="relative phone-frame rounded-[28px] overflow-hidden bg-slate-900 flex items-center justify-center">
+            <canvas id="reelCanvas" width="540" height="960" class="w-full h-full block cursor-pointer"></canvas>
+
+            <!-- Recording Overlay Badge -->
+            <div id="recordingBadge" class="hidden absolute top-10 right-4 px-2.5 py-1 rounded-full bg-rose-600 text-white text-[11px] font-bold flex items-center gap-1.5 shadow-lg">
+              <span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
+              <span>REC .WEBM</span>
+            </div>
+          </div>
+
+          <!-- Playback Transport Controls -->
+          <div class="w-full space-y-2.5 pt-1">
+            <!-- Scrubber Bar -->
+            <div class="flex items-center gap-2">
+              <span id="timeCurrentLabel" class="text-[11px] font-mono-code font-bold text-slate-500 w-9">00:00</span>
+              <input id="timelineScrubber" type="range" min="0" max="100" value="0" class="flex-1 accent-pink-500 h-1.5 bg-slate-200 rounded-lg cursor-pointer" />
+              <span id="timeTotalLabel" class="text-[11px] font-mono-code font-bold text-slate-500 w-9 text-right">00:30</span>
+            </div>
+
+            <!-- Transport Buttons -->
+            <div class="flex items-center justify-center gap-2.5">
+              <button id="btnPrevScene" type="button" class="p-2.5 rounded-xl bg-slate-100 hover:bg-violet-100 text-slate-700 transition" title="Previous Scene">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
+                </svg>
+              </button>
+              <button id="btnPlayPause" type="button" class="px-6 py-2.5 rounded-2xl font-extrabold text-xs sm:text-sm bg-gradient-to-r from-violet-600 via-fuchsia-500 to-pink-500 hover:from-violet-500 hover:to-pink-400 text-white shadow-lg shadow-pink-500/25 transition flex items-center gap-2">
+                <svg id="iconPlay" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+                <svg id="iconPause" class="w-4 h-4 hidden" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                </svg>
+                <span id="playBtnLabel">Play Study Reel</span>
+              </button>
+              <button id="btnNextScene" type="button" class="p-2.5 rounded-xl bg-slate-100 hover:bg-violet-100 text-slate-700 transition" title="Next Scene">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7"/>
+                </svg>
+              </button>
+              <button id="btnRestartReel" type="button" class="p-2.5 rounded-xl bg-slate-100 hover:bg-violet-100 text-slate-700 transition" title="Restart Short">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Action Dock (Shorts-style vertical action buttons: Upload, Theme Cycler, Next Topic, Edit Script) -->
+      <div class="lg:col-span-3 order-3 flex lg:flex-col items-center justify-center gap-3 flex-wrap">
+        <button id="btnDockUpload" type="button" class="w-full sm:w-48 p-3.5 rounded-2xl glass-panel hover:border-pink-400 transition flex items-center gap-3 text-left group">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-pink-500 to-rose-400 text-white flex items-center justify-center shadow-md group-hover:scale-105 transition shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+            </svg>
+          </div>
+          <div>
+            <div class="text-xs font-extrabold text-slate-900">Upload Study File</div>
+            <div class="text-[11px] text-slate-500">PDF, TXT, or Notes</div>
+          </div>
+        </button>
+
+        <button id="btnDockCycleTheme" type="button" class="w-full sm:w-48 p-3.5 rounded-2xl glass-panel hover:border-violet-400 transition flex items-center gap-3 text-left group">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-violet-500 to-indigo-500 text-white flex items-center justify-center shadow-md group-hover:scale-105 transition shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
+            </svg>
+          </div>
+          <div>
+            <div class="text-xs font-extrabold text-slate-900">Switch Color Vibe</div>
+            <div class="text-[11px] text-slate-500" id="dockThemeSubtext">Theme: Electric Berry</div>
+          </div>
+        </button>
+
+        <button id="btnDockEditScenes" type="button" class="w-full sm:w-48 p-3.5 rounded-2xl glass-panel hover:border-amber-400 transition flex items-center gap-3 text-left group">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-400 to-orange-500 text-white flex items-center justify-center shadow-md group-hover:scale-105 transition shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+          </div>
+          <div>
+            <div class="text-xs font-extrabold text-slate-900">Edit Storyboard</div>
+            <div class="text-[11px] text-slate-500">Tweak Script & Quiz</div>
+          </div>
+        </button>
+
+        <button id="btnDockNextShort" type="button" class="w-full sm:w-48 p-3.5 rounded-2xl glass-panel hover:border-emerald-400 transition flex items-center gap-3 text-left group">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-400 to-teal-500 text-white flex items-center justify-center shadow-md group-hover:scale-105 transition shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+            </svg>
+          </div>
+          <div>
+            <div class="text-xs font-extrabold text-slate-900">Next Study Short</div>
+            <div class="text-[11px] text-slate-500">Swipe to Next Topic</div>
+          </div>
+        </button>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <script>
+    // Configure PDF.js worker if available
+    if (window.pdfjsLib) {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    // Curated University Study Modules
+    const STUDY_PRESETS = {
+      os_deadlock: {
+        title: "Deadlock Conditions & Banker's Algorithm",
+        subject: "CSE2005 • Operating Systems",
+        notes: `A deadlock is a situation in an operating system where a set of processes are permanently blocked because each process holds a resource and waits for another resource held by another process in the same set.
+Coffman's Four Necessary Conditions for Deadlock:
+1. Mutual Exclusion: At least one resource must be held in a non-shareable mode so only one process can use it at a time.
+2. Hold and Wait: A process must be currently holding at least one resource and requesting additional resources that are being held by other processes.
+3. No Preemption: Resources cannot be forcibly taken away from a process; they can only be released voluntarily after the process completes its task.
+4. Circular Wait: A closed chain of processes exists, such that each process holds one or more resources needed by the next process in the chain.
+Deadlock Avoidance uses the Banker's Algorithm by Edsger Dijkstra, which tests for safety by simulating the allocation of predetermined maximum possible resources and checking if a Safe Sequence exists where all processes can finish execution without deadlocking.`
+      },
+      cn_tcp: {
+        title: "TCP 3-Way Handshake & Congestion Control",
+        subject: "CSE3002 • Computer Networks",
+        notes: `Transmission Control Protocol (TCP) is a connection-oriented, reliable transport layer protocol that establishes a full-duplex virtual circuit before exchanging application data.
+The TCP 3-Way Handshake establishes connection parameters and synchronizes initial sequence numbers:
+Step 1 (SYN): The client sends a TCP segment with the SYN flag set to 1 and chooses an Initial Sequence Number (ISN = x).
+Step 2 (SYN-ACK): The server receives the SYN, allocates buffer space, and replies with SYN=1, ACK=x+1, and its own sequence number (ISN = y).
+Step 3 (ACK): The client acknowledges the server by sending ACK=y+1 with SYN=0, transitioning both endpoints to the ESTABLISHED state.
+For congestion control, TCP uses Slow Start (exponential growth of congestion window cwnd every RTT), Congestion Avoidance (additive increase after reaching ssthresh), and Fast Retransmit upon receiving 3 duplicate ACKs without waiting for a retransmission timeout.`
+      },
+      dbms_acid: {
+        title: "ACID Properties & Transaction Isolation",
+        subject: "CSE2004 • Database Systems",
+        notes: `A database transaction is a logical unit of work that must execute either completely or not at all to maintain data integrity across concurrent accesses and hardware failures.
+The Four ACID Properties guarantee reliable transaction processing:
+1. Atomicity (All-or-Nothing): Managed by the Transaction Manager using Undo/Redo Write-Ahead Logging (WAL); if any operation fails, the entire transaction rolls back.
+2. Consistency: Every transaction must bring the database from one valid state to another, preserving all entity integrity, foreign keys, and domain constraints.
+3. Isolation: Concurrent transactions execute as if they were running serially, preventing concurrency anomalies like Dirty Reads, Non-Repeatable Reads, and Phantom Reads.
+4. Durability: Once a transaction commits, its changes are permanently recorded in non-volatile storage even in the event of an immediate power loss or crash.`
+      },
+      dsa_dp: {
+        title: "Dynamic Programming: Memoization vs Tabulation",
+        subject: "CSE2003 • Data Structures & Algorithms",
+        notes: `Dynamic Programming (DP) is an algorithmic optimization technique that solves complex problems by breaking them down into simpler subproblems and caching their solutions to avoid redundant exponential recomputation.
+Two Fundamental Properties Required for Dynamic Programming:
+1. Overlapping Subproblems: The recursive solution repeatedly solves the exact same subproblems over and over (like computing Fibonacci numbers or 0/1 Knapsack states).
+2. Optimal Substructure: An optimal solution to the overall problem can be constructed directly from optimal solutions of its smaller subproblems.
+Top-Down Memoization uses recursion plus a lookup hash table or array to cache results on demand, whereas Bottom-Up Tabulation iteratively fills an n-dimensional DP table from the base cases up, eliminating recursion stack overflow overhead.`
+      }
+    };
+
+    const PRESET_KEYS = ['os_deadlock', 'cn_tcp', 'dbms_acid', 'dsa_dp'];
+
+    // Bright, Vibrant, Eye-Catching 9:16 Video Color Palettes
+    const THEMES = {
+      cyber: {
+        name: 'Electric Berry',
+        bgTop: '#3b0764',
+        bgBottom: '#1e1b4b',
+        accent: '#f472b6',
+        accentSecondary: '#38bdf8',
+        cardBg: 'rgba(30, 27, 75, 0.86)',
+        cardBorder: 'rgba(244, 114, 182, 0.55)',
+        highlightText: '#fde047',
+        gridColor: 'rgba(244, 114, 182, 0.16)'
+      },
+      sunset: {
+        name: 'Sunny Coral',
+        bgTop: '#7c2d12',
+        bgBottom: '#4c0519',
+        accent: '#fb923c',
+        accentSecondary: '#f43f5e',
+        cardBg: 'rgba(67, 20, 7, 0.85)',
+        cardBorder: 'rgba(251, 146, 60, 0.55)',
+        highlightText: '#fef08a',
+        gridColor: 'rgba(251, 146, 60, 0.18)'
+      },
+      matrix: {
+        name: 'Mint Emerald',
+        bgTop: '#064e3b',
+        bgBottom: '#0f172a',
+        accent: '#34d399',
+        accentSecondary: '#2dd4bf',
+        cardBg: 'rgba(6, 78, 59, 0.85)',
+        cardBorder: 'rgba(52, 211, 153, 0.55)',
+        highlightText: '#fde047',
+        gridColor: 'rgba(52, 211, 153, 0.16)'
+      },
+      blueprint: {
+        name: 'Sky Royal',
+        bgTop: '#1e3a8a',
+        bgBottom: '#0f172a',
+        accent: '#38bdf8',
+        accentSecondary: '#a78bfa',
+        cardBg: 'rgba(30, 58, 138, 0.84)',
+        cardBorder: 'rgba(56, 189, 248, 0.55)',
+        highlightText: '#fde047',
+        gridColor: 'rgba(56, 189, 248, 0.18)'
+      }
+    };
+
+    // Main Application State (Defaults to 'shorts' mode so Shorts Player is front and center)
+    const state = {
+      activeTab: 'shorts',
+      currentPresetIdx: 0,
+      topicTitle: STUDY_PRESETS.os_deadlock.title,
+      subjectTag: STUDY_PRESETS.os_deadlock.subject,
+      rawNotes: STUDY_PRESETS.os_deadlock.notes,
+      reelMode: 'explainer',
+      visualTheme: 'cyber',
+      captionStyle: 'tiktok',
+      voiceRate: 1.1,
+      voiceEnabled: true,
+      synthEnabled: true,
+      isMuted: false,
+      scenes: [],
+      detectedConcepts: [],
+      activeSceneIndex: 0,
+      isPlaying: false,
+      sceneElapsedSec: 0,
+      lastFrameTime: 0,
+      animFrameId: null,
+      isRecording: false,
+      mediaRecorder: null,
+      recordedChunks: [],
+      savedReels: [],
+      particles: []
+    };
+
+    // Initialize floating canvas particles
+    for (let i = 0; i < 30; i++) {
+      state.particles.push({
+        x: Math.random() * 540,
+        y: Math.random() * 960,
+        r: 2 + Math.random() * 3.5,
+        vx: (Math.random() - 0.5) * 0.45,
+        vy: -0.35 - Math.random() * 0.65,
+        alpha: 0.25 + Math.random() * 0.55
+      });
+    }
+
+    // Web Audio Synthesizer for study transitions & soft ambient feedback
+    let audioCtx = null;
+    function playTransitionSound(freq = 520, type = 'sine', duration = 0.14) {
+      if (state.isMuted || !state.synthEnabled) return;
+      try {
+        if (!audioCtx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) audioCtx = new AudioContextClass();
+        }
+        if (!audioCtx) return;
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(freq * 1.35, audioCtx.currentTime + duration);
+        gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (err) {
+        // Ignore audio errors on restricted devices
+      }
+    }
+
+    // Web Speech API Narration
+    function speakSceneNarration(text) {
+      if (!('speechSynthesis' in window)) return;
+      try {
+        window.speechSynthesis.cancel();
+        if (state.isMuted || !state.voiceEnabled || !state.isPlaying) return;
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.rate = Math.min(Math.max(state.voiceRate, 0.8), 1.6);
+        utter.pitch = 1.03;
+        window.speechSynthesis.speak(utter);
+      } catch (e) {
+        // Ignore speech synthesis errors
+      }
+    }
+
+    function stopSpeech() {
+      if ('speechSynthesis' in window) {
+        try { window.speechSynthesis.cancel(); } catch (e) {}
+      }
+    }
+
+    // Bright Toast notification helper
+    function showToast(message, variant = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      const borderCol = variant === 'success' ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
+                      : variant === 'warn' ? 'border-amber-300 bg-amber-50 text-amber-900'
+                      : 'border-violet-300 bg-white text-slate-900';
+      toast.className = `px-4 py-3 rounded-2xl border-2 ${borderCol} text-xs font-extrabold shadow-xl transition-all duration-300 pointer-events-auto flex items-center gap-2`;
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(8px)';
+        setTimeout(() => toast.remove(), 280);
+      }, 3200);
+    }
+
+    // Extract key concepts & sentences from study material and build scenes
+    function generateScenesFromStudyNotes() {
+      const raw = state.rawNotes.trim();
+      const title = state.topicTitle.trim() || 'Study Topic Overview';
+      if (!raw) {
+        showToast('Please paste some study notes or upload a file first.', 'warn');
+        return;
+      }
+
+      document.getElementById('activeReelTitleHeading').textContent = title;
+      document.getElementById('activeSubjectPill').textContent = state.subjectTag;
+
+      const rawLines = raw
+        .split(/\n+/)
+        .map(l => l.trim())
+        .filter(l => l.length > 10);
+
+      const sentences = [];
+      rawLines.forEach(line => {
+        const parts = line.split(/(?<=[.?!])\s+/);
+        parts.forEach(p => {
+          const clean = p.trim();
+          if (clean.length > 12) sentences.push(clean);
+        });
+      });
+
+      const stopWords = new Set(['The','This','That','These','Those','With','From','Into','During','Including','Until','Against','Among','Throughout','Despite','Towards','Upon','Concerning','For','And','Are','But','Not','You','All','Can','Her','Was','One','Our','Out','Day','Get','Has','Him','His','How','Man','New','Now','Old','See','Two','Way','Who','Boy','Did','Its','Let','Put','Say','She','Too','Use','Step','Four','Two']);
+      const termCounts = {};
+      const wordMatches = raw.match(/\b[A-Z][A-Za-z0-9+-]{2,}\b/g) || [];
+      wordMatches.forEach(w => {
+        if (!stopWords.has(w)) {
+          termCounts[w] = (termCounts[w] || 0) + 1;
+        }
+      });
+
+      const sortedConcepts = Object.entries(termCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 6)
+        .map(entry => entry[0]);
+
+      if (sortedConcepts.length < 3) {
+        sortedConcepts.push('Core Concept', 'Exam Key Point', 'System Flow');
+      }
+      state.detectedConcepts = sortedConcepts;
+
+      const wordCount = raw.split(/\s+/).filter(Boolean).length;
+      document.getElementById('wordCountStats').textContent = `${wordCount} words • ${sentences.length} key statements`;
+
+      const scenes = [];
+      const firstSentence = sentences[0] || `Let's master ${title} in under 60 seconds.`;
+      const middleSentences = sentences.slice(1, -1);
+      const lastSentence = sentences.length > 1 ? sentences[sentences.length - 1] : `Remember how ${sortedConcepts[0]} connects to ${sortedConcepts[1] || 'system performance'}.`;
+
+      // Scene 1: High-retention Hook
+      scenes.push({
+        id: 'sc_' + Date.now() + '_1',
+        tag: '01 • THE HOOK',
+        headline: title.length > 42 ? title.slice(0, 40) + '…' : title,
+        diagramType: 'hook',
+        narration: `Stop scrolling! Need to master ${title} before your exam? Here is the exact breakdown in under 60 seconds.`,
+        bullets: sortedConcepts.slice(0, 3),
+        duration: 5.2
+      });
+
+      // Scene 2: Core Definition
+      scenes.push({
+        id: 'sc_' + Date.now() + '_2',
+        tag: '02 • CORE DEFINITION',
+        headline: `What is ${sortedConcepts[0] || 'the Core Idea'}?`,
+        diagramType: 'pillars',
+        narration: truncateNarration(firstSentence, 190),
+        bullets: extractBulletPhrases(firstSentence, sortedConcepts),
+        duration: calcDuration(firstSentence)
+      });
+
+      // Scene 3: Step-by-Step Mechanism / Flowchart
+      const stepItems = middleSentences.slice(0, 3);
+      const combinedStepsNarration = stepItems.length > 0
+        ? stepItems.join(' ')
+        : `Here are the critical stages: ${sortedConcepts.slice(0, 4).join(', ')}.`;
+
+      scenes.push({
+        id: 'sc_' + Date.now() + '_3',
+        tag: '03 • MECHANISM & FLOW',
+        headline: `How It Works Step-by-Step`,
+        diagramType: 'flowchart',
+        narration: truncateNarration(combinedStepsNarration, 210),
+        bullets: stepItems.length > 0
+          ? stepItems.map(s => summarizeBullet(s))
+          : sortedConcepts.slice(0, 4),
+        duration: calcDuration(combinedStepsNarration)
+      });
+
+      // Scene 4: Deep Dive or Additional Concept
+      if (middleSentences.length > 3 || state.reelMode === 'explainer') {
+        const extraSent = middleSentences.slice(3, 5).join(' ') || lastSentence;
+        scenes.push({
+          id: 'sc_' + Date.now() + '_4',
+          tag: '04 • KEY RULES & LOGIC',
+          headline: `${sortedConcepts[1] || 'Critical'} Architecture`,
+          diagramType: 'code',
+          narration: truncateNarration(extraSent, 185),
+          bullets: extractBulletPhrases(extraSent, sortedConcepts),
+          duration: calcDuration(extraSent)
+        });
+      }
+
+      // Scene 5: Exam Takeaway / Pro-Tip
+      scenes.push({
+        id: 'sc_' + Date.now() + '_5',
+        tag: `0${scenes.length + 1} • EXAM TAKEAWAY`,
+        headline: `Must-Remember Exam Rule`,
+        diagramType: 'pillars',
+        narration: truncateNarration(lastSentence, 180),
+        bullets: [
+          sortedConcepts[0] ? `Focus: ${sortedConcepts[0]}` : 'High-Yield Concept',
+          sortedConcepts[1] ? `Link: ${sortedConcepts[1]}` : 'Check Edge Cases',
+          sortedConcepts[2] ? `Rule: ${sortedConcepts[2]}` : 'Verify Complexity'
+        ],
+        duration: calcDuration(lastSentence)
+      });
+
+      // Scene 6: Rapid Quiz Challenge
+      const quizConcept = sortedConcepts[0] || title.split(' ')[0];
+      scenes.push({
+        id: 'sc_' + Date.now() + '_6',
+        tag: `0${scenes.length + 1} • 3-SEC RAPID QUIZ`,
+        headline: `Pop Quiz: Can You Answer?`,
+        diagramType: 'quiz',
+        narration: `Quick 3 second quiz! Which core mechanism governs ${quizConcept}? Pause the reel or check the highlighted answer below!`,
+        bullets: [
+          `Q: Primary pillar of ${title.split(' ')[0]}?`,
+          `Answer: ${sortedConcepts.slice(0, 2).join(' + ')}`,
+          `Save this reel for FAT revision!`
+        ],
+        duration: 5.5
+      });
+
+      state.scenes = scenes;
+      state.activeSceneIndex = 0;
+      state.sceneElapsedSec = 0;
+
+      renderDetectedConcepts();
+      renderSceneList();
+      renderQuickSceneJumpList();
+      populateSceneEditor(0);
+      updateTimingLabels();
+    }
+
+    function truncateNarration(str, maxChars) {
+      const clean = str.replace(/\s+/g, ' ').trim();
+      if (clean.length <= maxChars) return clean;
+      return clean.slice(0, maxChars).replace(/\s+\S*$/, '') + '.';
+    }
+
+    function summarizeBullet(sentence) {
+      const colonSplit = sentence.split(':');
+      if (colonSplit.length > 1 && colonSplit[0].length < 36) {
+        return colonSplit[0].replace(/^\d+[\.\)]\s*/, '').trim();
+      }
+      const words = sentence.replace(/^\d+[\.\)]\s*/, '').split(/\s+/);
+      return words.slice(0, 5).join(' ');
+    }
+
+    function extractBulletPhrases(text, fallbackConcepts) {
+      const phrases = text
+        .split(/[,;:]/)
+        .map(s => s.trim())
+        .filter(s => s.length > 4 && s.length < 42)
+        .slice(0, 4);
+      if (phrases.length >= 2) return phrases;
+      return fallbackConcepts.slice(0, 4);
+    }
+
+    function calcDuration(text) {
+      const words = text.trim().split(/\s+/).length;
+      const wps = 2.7 * state.voiceRate;
+      return Math.max(4.5, Math.min(9.5, Number((words / wps + 1.0).toFixed(1))));
+    }
+
+    function getTotalDuration() {
+      return state.scenes.reduce((acc, s) => acc + (Number(s.duration) || 5), 0);
+    }
+
+    function formatSeconds(sec) {
+      const s = Math.max(0, Math.floor(sec));
+      const mins = String(Math.floor(s / 60)).padStart(2, '0');
+      const rem = String(s % 60).padStart(2, '0');
+      return `${mins}:${rem}`;
+    }
+
+    function updateTimingLabels() {
+      const total = getTotalDuration();
+      document.getElementById('estTotalDuration').textContent = `~${Math.round(total)}s • ${state.scenes.length} scenes`;
+      document.getElementById('timeTotalLabel').textContent = formatSeconds(total);
+      document.getElementById('sceneCountBadge').textContent = String(state.scenes.length);
+      document.getElementById('sceneCounterLabel').textContent = `Scene ${state.activeSceneIndex + 1} / ${state.scenes.length}`;
+
+      let elapsedBefore = 0;
+      for (let i = 0; i < state.activeSceneIndex; i++) {
+        elapsedBefore += state.scenes[i].duration;
+      }
+      const currentOverall = elapsedBefore + state.sceneElapsedSec;
+      document.getElementById('timeCurrentLabel').textContent = formatSeconds(currentOverall);
+      const pct = total > 0 ? Math.min(100, (currentOverall / total) * 100) : 0;
+      document.getElementById('timelineScrubber').value = String(pct);
+    }
+
+    function renderDetectedConcepts() {
+      const container = document.getElementById('detectedConceptsList');
+      container.innerHTML = '';
+      const badgeColors = [
+        'bg-pink-100 text-pink-700 border-pink-200',
+        'bg-violet-100 text-violet-700 border-violet-200',
+        'bg-sky-100 text-sky-700 border-sky-200',
+        'bg-emerald-100 text-emerald-700 border-emerald-200',
+        'bg-amber-100 text-amber-800 border-amber-200'
+      ];
+      state.detectedConcepts.forEach((concept, idx) => {
+        const badge = document.createElement('span');
+        badge.className = `px-2.5 py-1 rounded-xl text-[11px] font-bold border ${badgeColors[idx % badgeColors.length]}`;
+        badge.textContent = concept;
+        container.appendChild(badge);
+      });
+    }
+
+    function renderQuickSceneJumpList() {
+      const container = document.getElementById('quickSceneJumpList');
+      if (!container) return;
+      container.innerHTML = '';
+      state.scenes.forEach((sc, idx) => {
+        const isActive = idx === state.activeSceneIndex;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `w-full px-3 py-2 rounded-xl text-left text-xs font-bold transition flex items-center justify-between border ${
+          isActive
+            ? 'bg-gradient-to-r from-violet-600 to-pink-500 text-white border-transparent shadow-sm'
+            : 'bg-slate-50 hover:bg-violet-50 text-slate-700 border-slate-200/80'
+        }`;
+        btn.innerHTML = `
+          <span class="truncate pr-2">${idx + 1}. ${escapeHtml(sc.headline)}</span>
+          <span class="text-[10px] font-mono-code opacity-80 shrink-0">${sc.duration.toFixed(1)}s</span>
+        `;
+        btn.addEventListener('click', () => selectScene(idx, true));
+        container.appendChild(btn);
+      });
+    }
+
+    function renderSceneList() {
+      const container = document.getElementById('sceneListContainer');
+      container.innerHTML = '';
+      state.scenes.forEach((sc, idx) => {
+        const card = document.createElement('div');
+        const isActive = idx === state.activeSceneIndex;
+        card.className = `p-3.5 rounded-2xl border border-slate-200 bg-white hover:border-violet-300 transition cursor-pointer flex items-start justify-between gap-3 ${isActive ? 'scene-card-active' : ''}`;
+        card.innerHTML = `
+          <div class="space-y-1 flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-violet-100 text-violet-700 uppercase">${escapeHtml(sc.tag)}</span>
+              <span class="text-xs font-extrabold text-slate-900 truncate">${escapeHtml(sc.headline)}</span>
+            </div>
+            <p class="text-xs text-slate-600 line-clamp-2">${escapeHtml(sc.narration)}</p>
+          </div>
+          <div class="text-right shrink-0">
+            <span class="text-[11px] font-mono-code font-bold text-slate-500">${sc.duration.toFixed(1)}s</span>
+            <div class="text-[10px] text-pink-600 font-bold uppercase mt-1">${escapeHtml(sc.diagramType)}</div>
+          </div>
+        `;
+        card.addEventListener('click', () => {
+          selectScene(idx, true);
+        });
+        container.appendChild(card);
+      });
+    }
+
+    function populateSceneEditor(idx) {
+      const sc = state.scenes[idx];
+      if (!sc) return;
+      document.getElementById('editingSceneBadge').textContent = `Editing Scene ${idx + 1} of ${state.scenes.length}`;
+      document.getElementById('editSceneTag').value = sc.tag;
+      document.getElementById('editSceneHeadline').value = sc.headline;
+      document.getElementById('editSceneDiagram').value = sc.diagramType;
+      document.getElementById('editSceneNarration').value = sc.narration;
+      document.getElementById('editSceneBullets').value = (sc.bullets || []).join(', ');
+    }
+
+    function selectScene(idx, triggerSpeech = false) {
+      if (idx < 0 || idx >= state.scenes.length) return;
+      state.activeSceneIndex = idx;
+      state.sceneElapsedSec = 0;
+      populateSceneEditor(idx);
+      renderSceneList();
+      renderQuickSceneJumpList();
+      updateTimingLabels();
+      playTransitionSound(480 + idx * 45, 'sine', 0.12);
+      if (state.isPlaying && triggerSpeech) {
+        speakSceneNarration(state.scenes[idx].narration);
+      }
+    }
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // =========================================================================
+    // 9:16 VERTICAL VIDEO CANVAS RENDERING ENGINE (60 FPS)
+    // =========================================================================
+    const canvas = document.getElementById('reelCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function renderCanvasFrame(timestamp) {
+      if (!state.lastFrameTime) state.lastFrameTime = timestamp;
+      const dt = Math.min(0.1, (timestamp - state.lastFrameTime) / 1000);
+      state.lastFrameTime = timestamp;
+
+      const currentScene = state.scenes[state.activeSceneIndex];
+      if (state.isPlaying && currentScene) {
+        state.sceneElapsedSec += dt;
+        if (state.sceneElapsedSec >= currentScene.duration) {
+          if (state.activeSceneIndex < state.scenes.length - 1) {
+            state.activeSceneIndex++;
+            state.sceneElapsedSec = 0;
+            populateSceneEditor(state.activeSceneIndex);
+            renderSceneList();
+            renderQuickSceneJumpList();
+            playTransitionSound(540 + state.activeSceneIndex * 50, 'triangle', 0.15);
+            speakSceneNarration(state.scenes[state.activeSceneIndex].narration);
+          } else {
+            if (state.isRecording && state.mediaRecorder && state.mediaRecorder.state === 'recording') {
+              state.mediaRecorder.stop();
+            }
+            pauseReel();
+            state.sceneElapsedSec = currentScene.duration;
+          }
+        }
+        updateTimingLabels();
+      }
+
+      drawVerticalReelFrame(currentScene, timestamp / 1000);
+      state.animFrameId = requestAnimationFrame(renderCanvasFrame);
+    }
+
+    function drawVerticalReelFrame(scene, timeSec) {
+      const W = canvas.width;   // 540
+      const H = canvas.height;  // 960
+      const theme = THEMES[state.visualTheme] || THEMES.cyber;
+
+      // 1. Vibrant Background Gradient
+      const grad = ctx.createLinearGradient(0, 0, W, H);
+      grad.addColorStop(0, theme.bgTop);
+      grad.addColorStop(1, theme.bgBottom);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+
+      // 2. Animated Perspective Grid & Floating Particles
+      ctx.save();
+      ctx.strokeStyle = theme.gridColor;
+      ctx.lineWidth = 1;
+      const gridOffset = (timeSec * 28) % 48;
+      for (let x = 0; x <= W; x += 48) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, H);
+        ctx.stroke();
+      }
+      for (let y = gridOffset; y <= H; y += 48) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(W, y);
+        ctx.stroke();
+      }
+
+      state.particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.y < 0) p.y = H;
+        if (p.x < 0) p.x = W;
+        if (p.x > W) p.x = 0;
+        ctx.fillStyle = theme.accent;
+        ctx.globalAlpha = p.alpha * 0.55;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.restore();
+
+      if (!scene) return;
+
+      // 3. Top Segmented Stories Progress Bar
+      const totalScenes = state.scenes.length;
+      const barMargin = 24;
+      const gap = 6;
+      const segWidth = (W - barMargin * 2 - gap * (totalScenes - 1)) / totalScenes;
+      const barY = 26;
+
+      for (let i = 0; i < totalScenes; i++) {
+        const segX = barMargin + i * (segWidth + gap);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+        roundRect(ctx, segX, barY, segWidth, 6, 3, true, false);
+
+        let fillRatio = 0;
+        if (i < state.activeSceneIndex) fillRatio = 1;
+        else if (i === state.activeSceneIndex) {
+          fillRatio = Math.min(1, state.sceneElapsedSec / (scene.duration || 5));
+        }
+        if (fillRatio > 0) {
+          ctx.fillStyle = theme.highlightText;
+          roundRect(ctx, segX, barY, segWidth * fillRatio, 6, 3, true, false);
+        }
+      }
+
+      // 4. Subject Header & Scene Tag Pill
+      ctx.save();
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.65)';
+      ctx.strokeStyle = theme.cardBorder;
+      ctx.lineWidth = 1.5;
+      roundRect(ctx, 28, 52, W - 56, 44, 14, true, true);
+
+      ctx.fillStyle = theme.highlightText;
+      ctx.font = '800 13px Inter, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(state.subjectTag.toUpperCase().slice(0, 28), 44, 79);
+
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = '700 12px "JetBrains Mono", monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText(scene.tag, W - 44, 79);
+      ctx.restore();
+
+      // 5. Scene Headline Title
+      ctx.save();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 28px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+      ctx.shadowBlur = 12;
+      wrapText(ctx, scene.headline, W / 2, 148, W - 64, 34, 2);
+      ctx.restore();
+
+      // 6. Central Dynamic Diagram Visual Card (Y: 215 to 585)
+      drawSceneDiagramCard(ctx, scene, theme, timeSec, 32, 215, W - 64, 365);
+
+      // 7. Kinetic Word-by-Word Synchronized Captions (Y: 615 to 825)
+      drawKineticCaptions(ctx, scene, theme, timeSec, 32, 615, W - 64, 200);
+
+      // 8. Bottom Audio Waveform & Topic Watermark Footer (Y: 855 to 930)
+      drawBottomAudioBar(ctx, theme, timeSec, 32, 865, W - 64, 58);
+    }
+
+    function drawSceneDiagramCard(ctx, scene, theme, timeSec, x, y, w, h) {
+      ctx.save();
+      ctx.fillStyle = theme.cardBg;
+      ctx.strokeStyle = theme.cardBorder;
+      ctx.lineWidth = 2;
+      roundRect(ctx, x, y, w, h, 24, true, true);
+
+      const bullets = (scene.bullets && scene.bullets.length > 0)
+        ? scene.bullets
+        : ['Concept Node 1', 'Concept Node 2', 'Concept Node 3'];
+
+      const progress = Math.min(1, state.sceneElapsedSec / Math.max(1, scene.duration * 0.7));
+
+      if (scene.diagramType === 'hook') {
+        const centerX = x + w / 2;
+        const centerY = y + h / 2 - 20;
+        const pulse = 1 + Math.sin(timeSec * 4.5) * 0.07;
+
+        ctx.strokeStyle = theme.highlightText;
+        ctx.lineWidth = 3;
+        ctx.globalAlpha = 0.45;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 78 * pulse, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = theme.accent;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 54, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 22px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('60s', centerX, centerY + 8);
+
+        const pillY = y + h - 72;
+        const pillW = (w - 48) / Math.min(3, bullets.length);
+        bullets.slice(0, 3).forEach((b, idx) => {
+          const px = x + 18 + idx * (pillW + 6);
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.14)';
+          ctx.strokeStyle = theme.accentSecondary;
+          ctx.lineWidth = 1.5;
+          roundRect(ctx, px, pillY, pillW, 44, 12, true, true);
+
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '800 13px Inter, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(String(b).slice(0, 16), px + pillW / 2, pillY + 27);
+        });
+      } else if (scene.diagramType === 'flowchart') {
+        const items = bullets.slice(0, 4);
+        const boxH = 58;
+        const gapY = 22;
+        const startY = y + 28;
+
+        items.forEach((item, i) => {
+          const iy = startY + i * (boxH + gapY);
+          const isReached = progress >= (i / items.length);
+
+          if (i < items.length - 1) {
+            ctx.strokeStyle = isReached ? theme.highlightText : 'rgba(255, 255, 255, 0.25)';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(x + w / 2, iy + boxH);
+            ctx.lineTo(x + w / 2, iy + boxH + gapY);
+            ctx.stroke();
+          }
+
+          ctx.fillStyle = isReached ? 'rgba(255, 255, 255, 0.16)' : 'rgba(15, 23, 42, 0.65)';
+          ctx.strokeStyle = isReached ? theme.highlightText : 'rgba(255, 255, 255, 0.25)';
+          ctx.lineWidth = isReached ? 2.2 : 1.2;
+          roundRect(ctx, x + 28, iy, w - 56, boxH, 14, true, true);
+
+          ctx.fillStyle = isReached ? theme.highlightText : '#475569';
+          ctx.beginPath();
+          ctx.arc(x + 56, iy + boxH / 2, 15, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#0f172a';
+          ctx.font = '900 13px "JetBrains Mono", monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(String(i + 1), x + 56, iy + boxH / 2 + 4);
+
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '700 15px Inter, sans-serif';
+          ctx.textAlign = 'left';
+          ctx.fillText(String(item).slice(0, 34), x + 84, iy + boxH / 2 + 5);
+        });
+      } else if (scene.diagramType === 'code') {
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+        ctx.strokeStyle = theme.accentSecondary;
+        roundRect(ctx, x + 20, y + 22, w - 40, h - 44, 16, true, true);
+
+        ['#f43f5e', '#facc15', '#10b981'].forEach((col, idx) => {
+          ctx.fillStyle = col;
+          ctx.beginPath();
+          ctx.arc(x + 42 + idx * 18, y + 42, 5.5, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = '700 12px "JetBrains Mono", monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText('study_notes.py', x + w - 38, y + 46);
+
+        const lines = bullets.slice(0, 4);
+        lines.forEach((line, idx) => {
+          const ly = y + 95 + idx * 62;
+          ctx.fillStyle = theme.highlightText;
+          ctx.font = '800 13px "JetBrains Mono", monospace';
+          ctx.textAlign = 'left';
+          ctx.fillText(`0${idx + 1} >>`, x + 38, ly);
+
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '600 15px "JetBrains Mono", monospace';
+          wrapText(ctx, String(line), x + 92, ly, w - 125, 22, 2);
+        });
+      } else if (scene.diagramType === 'quiz') {
+        const remaining = Math.max(0, Math.ceil(scene.duration - state.sceneElapsedSec));
+        const revealAnswer = state.sceneElapsedSec >= scene.duration * 0.55;
+
+        ctx.fillStyle = revealAnswer ? '#34d399' : theme.highlightText;
+        ctx.font = '900 18px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(revealAnswer ? '✓ ANSWER REVEALED' : `⏱ THINK FAST: ${remaining}s`, x + w / 2, y + 52);
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+        roundRect(ctx, x + 24, y + 76, w - 48, 110, 16, true, false);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '800 18px Inter, sans-serif';
+        wrapText(ctx, bullets[0] || 'What is the primary invariant?', x + w / 2, y + 122, w - 76, 26, 2);
+
+        ctx.fillStyle = revealAnswer ? 'rgba(16, 185, 129, 0.3)' : 'rgba(15, 23, 42, 0.75)';
+        ctx.strokeStyle = revealAnswer ? '#34d399' : 'rgba(255, 255, 255, 0.35)';
+        ctx.lineWidth = 2.2;
+        roundRect(ctx, x + 24, y + 210, w - 48, 115, 16, true, true);
+
+        ctx.fillStyle = revealAnswer ? '#fef08a' : '#e2e8f0';
+        ctx.font = '800 19px Inter, sans-serif';
+        const ansText = revealAnswer ? (bullets[1] || 'Key Concept Verified!') : 'Tap or Wait for Answer...';
+        wrapText(ctx, ansText, x + w / 2, y + 265, w - 76, 26, 2);
+      } else {
+        const items = bullets.slice(0, 4);
+        const cellW = (w - 54) / 2;
+        const cellH = (h - 54) / 2;
+
+        items.forEach((item, idx) => {
+          const col = idx % 2;
+          const row = Math.floor(idx / 2);
+          const cx = x + 18 + col * (cellW + 18);
+          const cy = y + 18 + row * (cellH + 18);
+          const activeCell = progress >= (idx / items.length);
+
+          ctx.fillStyle = activeCell ? 'rgba(255, 255, 255, 0.16)' : 'rgba(15, 23, 42, 0.6)';
+          ctx.strokeStyle = activeCell ? theme.highlightText : 'rgba(255, 255, 255, 0.25)';
+          ctx.lineWidth = 1.8;
+          roundRect(ctx, cx, cy, cellW, cellH, 16, true, true);
+
+          ctx.fillStyle = theme.highlightText;
+          ctx.font = '800 13px "JetBrains Mono", monospace';
+          ctx.textAlign = 'left';
+          ctx.fillText(`KEY 0${idx + 1}`, cx + 16, cy + 32);
+
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '700 16px Inter, sans-serif';
+          wrapText(ctx, String(item), cx + 16, cy + 66, cellW - 32, 22, 3);
+        });
+      }
+
+      ctx.restore();
+    }
+
+    function drawKineticCaptions(ctx, scene, theme, timeSec, x, y, w, h) {
+      ctx.save();
+      const words = (scene.narration || '').trim().split(/\s+/).filter(Boolean);
+      if (words.length === 0) {
+        ctx.restore();
+        return;
+      }
+
+      const progress = Math.min(0.999, state.sceneElapsedSec / Math.max(0.5, scene.duration));
+      const activeWordIdx = Math.floor(progress * words.length);
+
+      const chunkSize = 6;
+      const currentChunkIndex = Math.floor(activeWordIdx / chunkSize);
+      const chunkStart = currentChunkIndex * chunkSize;
+      const chunkWords = words.slice(chunkStart, chunkStart + chunkSize);
+
+      ctx.fillStyle = state.captionStyle === 'glass'
+        ? 'rgba(15, 23, 42, 0.78)'
+        : 'rgba(15, 23, 42, 0.88)';
+      ctx.strokeStyle = state.captionStyle === 'terminal' ? theme.accent : 'rgba(255, 255, 255, 0.25)';
+      ctx.lineWidth = 1.8;
+      roundRect(ctx, x, y, w, h, 22, true, true);
+
+      const fontFamily = state.captionStyle === 'terminal' ? '"JetBrains Mono", monospace' : 'Inter, sans-serif';
+      const fontSize = state.captionStyle === 'terminal' ? 22 : 26;
+      ctx.font = `800 ${fontSize}px ${fontFamily}`;
+
+      const mid = Math.ceil(chunkWords.length / 2);
+      const line1Words = chunkWords.slice(0, mid);
+      const line2Words = chunkWords.slice(mid);
+
+      drawHighlightedWordLine(ctx, line1Words, chunkStart, activeWordIdx, x + w / 2, y + 78, theme, fontSize, fontFamily);
+      if (line2Words.length > 0) {
+        drawHighlightedWordLine(ctx, line2Words, chunkStart + mid, activeWordIdx, x + w / 2, y + 126, theme, fontSize, fontFamily);
+      }
+
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = '700 12px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(`WORD ${activeWordIdx + 1} OF ${words.length} • ${state.captionStyle.toUpperCase()} CAPTIONS`, x + w / 2, y + h - 20);
+      ctx.restore();
+    }
+
+    function drawHighlightedWordLine(ctx, wordArray, baseIndex, activeWordIdx, centerX, lineY, theme, fontSize, fontFamily) {
+      const spaceWidth = 11;
+      ctx.font = `800 ${fontSize}px ${fontFamily}`;
+      const widths = wordArray.map(w => ctx.measureText(w).width);
+      const totalW = widths.reduce((a, b) => a + b, 0) + spaceWidth * Math.max(0, wordArray.length - 1);
+
+      let curX = centerX - totalW / 2;
+      wordArray.forEach((word, i) => {
+        const globalIdx = baseIndex + i;
+        const isCurrent = globalIdx === activeWordIdx;
+        const wWidth = widths[i];
+
+        if (isCurrent) {
+          ctx.fillStyle = theme.highlightText;
+          roundRect(ctx, curX - 6, lineY - fontSize + 2, wWidth + 12, fontSize + 10, 8, true, false);
+          ctx.fillStyle = '#0f172a';
+        } else if (globalIdx < activeWordIdx) {
+          ctx.fillStyle = '#ffffff';
+        } else {
+          ctx.fillStyle = 'rgba(241, 245, 249, 0.65)';
+        }
+
+        ctx.textAlign = 'left';
+        ctx.fillText(word, curX, lineY);
+        curX += wWidth + spaceWidth;
+      });
+    }
+
+    function drawBottomAudioBar(ctx, theme, timeSec, x, y, w, h) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.72)';
+      roundRect(ctx, x, y, w, h, 16, true, false);
+
+      const barCount = 24;
+      const startX = x + 22;
+      for (let i = 0; i < barCount; i++) {
+        const wave = state.isPlaying
+          ? Math.abs(Math.sin(timeSec * 8 + i * 0.45)) * 24 + 6
+          : 6;
+        ctx.fillStyle = i % 2 === 0 ? theme.highlightText : theme.accent;
+        const bx = startX + i * 8;
+        const by = y + h / 2 - wave / 2;
+        roundRect(ctx, bx, by, 4, wave, 2, true, false);
+      }
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '800 13px Inter, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText('@StudyShorts • VIT Revision', x + w - 20, y + h / 2 + 5);
+      ctx.restore();
+    }
+
+    function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+      if (fill) ctx.fill();
+      if (stroke) ctx.stroke();
+    }
+
+    function wrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines = 3) {
+      const words = String(text || '').split(' ');
+      let line = '';
+      let lineCount = 0;
+      for (let n = 0; n < words.length; n++) {
+        const testLine = line + words[n] + ' ';
+        const metrics = ctx.measureText(testLine);
+        if (metrics.width > maxWidth && n > 0) {
+          lineCount++;
+          if (lineCount >= maxLines) {
+            ctx.fillText(line.trim() + '…', x, y);
+            return;
+          }
+          ctx.fillText(line.trim(), x, y);
+          line = words[n] + ' ';
+          y += lineHeight;
+        } else {
+          line = testLine;
+        }
+      }
+      ctx.fillText(line.trim(), x, y);
+    }
+
+    // =========================================================================
+    // PLAYBACK & RECORDING CONTROLS
+    // =========================================================================
+    function playReel() {
+      if (state.scenes.length === 0) return;
+      state.isPlaying = true;
+      state.lastFrameTime = performance.now();
+      document.getElementById('iconPlay').classList.add('hidden');
+      document.getElementById('iconPause').classList.remove('hidden');
+      document.getElementById('playBtnLabel').textContent = 'Pause Study Short';
+      document.getElementById('playerStateLabel').textContent = 'Playing Live 9:16 Short';
+      playTransitionSound(620, 'sine', 0.12);
+      speakSceneNarration(state.scenes[state.activeSceneIndex].narration);
+    }
+
+    function pauseReel() {
+      state.isPlaying = false;
+      stopSpeech();
+      document.getElementById('iconPlay').classList.remove('hidden');
+      document.getElementById('iconPause').classList.add('hidden');
+      document.getElementById('playBtnLabel').textContent = 'Play Study Short';
+      document.getElementById('playerStateLabel').textContent = 'Paused • Click to Play';
+    }
+
+    function togglePlayPause() {
+      if (state.isPlaying) {
+        pauseReel();
+      } else {
+        if (state.activeSceneIndex === state.scenes.length - 1 &&
+            state.sceneElapsedSec >= state.scenes[state.activeSceneIndex].duration - 0.2) {
+          state.activeSceneIndex = 0;
+          state.sceneElapsedSec = 0;
+        }
+        playReel();
+      }
+    }
+
+    function startWebmExport() {
+      if (state.isRecording) {
+        if (state.mediaRecorder && state.mediaRecorder.state === 'recording') {
+          state.mediaRecorder.stop();
+        }
+        return;
+      }
+
+      if (!canvas.captureStream || typeof MediaRecorder === 'undefined') {
+        showToast('Your browser does not support direct Canvas WebM recording. Exporting JSON Storyboard instead.', 'warn');
+        exportJsonPack();
+        return;
+      }
+
+      try {
+        const stream = canvas.captureStream(30);
+        let mimeType = 'video/webm;codecs=vp9';
+        if (!MediaRecorder.isTypeSupported(mimeType)) {
+          mimeType = 'video/webm';
+        }
+        const recorder = new MediaRecorder(stream, { mimeType });
+        state.recordedChunks = [];
+        state.mediaRecorder = recorder;
+        state.isRecording = true;
+
+        document.getElementById('recordingBadge').classList.remove('hidden');
+        document.getElementById('exportBtnText').textContent = 'Stop & Save .WebM';
+        showToast('Recording 9:16 short from Scene 1! Click "Stop & Save .WebM" anytime.', 'info');
+
+        recorder.ondataavailable = e => {
+          if (e.data && e.data.size > 0) state.recordedChunks.push(e.data);
+        };
+
+        recorder.onstop = () => {
+          state.isRecording = false;
+          document.getElementById('recordingBadge').classList.add('hidden');
+          document.getElementById('exportBtnText').textContent = 'Export .WebM';
+
+          const blob = new Blob(state.recordedChunks, { type: 'video/webm' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          const safeName = (state.topicTitle || 'study_reel').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+          a.href = url;
+          a.download = `${safeName}_9x16_short.webm`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 5000);
+          showToast('Downloaded 9:16 vertical .webm video!', 'success');
+        };
+
+        state.activeSceneIndex = 0;
+        state.sceneElapsedSec = 0;
+        populateSceneEditor(0);
+        renderSceneList();
+        renderQuickSceneJumpList();
+        recorder.start();
+        playReel();
+      } catch (err) {
+        state.isRecording = false;
+        showToast('Could not start video recorder: ' + err.message, 'warn');
+      }
+    }
+
+    function exportSrtCaptions() {
+      let srt = '';
+      let currentStart = 0;
+      state.scenes.forEach((sc, idx) => {
+        const startSec = currentStart;
+        const endSec = currentStart + sc.duration;
+        srt += `${idx + 1}\n`;
+        srt += `${formatSrtTime(startSec)} --> ${formatSrtTime(endSec)}\n`;
+        srt += `[${sc.headline}]\n${sc.narration}\n\n`;
+        currentStart = endSec;
+      });
+
+      const blob = new Blob([srt], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const safeName = (state.topicTitle || 'study_reel').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+      a.href = url;
+      a.download = `${safeName}_captions.srt`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      showToast('Downloaded .SRT subtitle file!', 'success');
+    }
+
+    function formatSrtTime(sec) {
+      const hrs = String(Math.floor(sec / 3600)).padStart(2, '0');
+      const mins = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
+      const secs = String(Math.floor(sec % 60)).padStart(2, '0');
+      const ms = String(Math.round((sec % 1) * 1000)).padStart(3, '0');
+      return `${hrs}:${mins}:${secs},${ms}`;
+    }
+
+    function exportJsonPack() {
+      const payload = {
+        title: state.topicTitle,
+        subject: state.subjectTag,
+        visualTheme: state.visualTheme,
+        captionStyle: state.captionStyle,
+        generatedAt: new Date().toISOString(),
+        scenes: state.scenes
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'study_shorts_storyboard.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      showToast('Exported JSON storyboard pack!', 'success');
+    }
+
+    // =========================================================================
+    // FILE UPLOAD (.PDF, .TXT, .MD) CLIENT-SIDE PARSER
+    // =========================================================================
+    async function handleUploadedFile(file) {
+      if (!file) return;
+      const statusPill = document.getElementById('uploadStatusPill');
+      statusPill.textContent = `Parsing ${file.name}...`;
+      statusPill.className = 'px-3 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300';
+
+      const baseTitle = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]+/g, ' ');
+      document.getElementById('inputTopicTitle').value = baseTitle;
+      state.topicTitle = baseTitle;
+
+      try {
+        if (file.name.toLowerCase().endsWith('.pdf')) {
+          if (!window.pdfjsLib) {
+            throw new Error('PDF.js library is still loading');
+          }
+          const arrayBuffer = await file.arrayBuffer();
+          const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+          let extractedText = '';
+          const maxPages = Math.min(pdf.numPages, 12);
+          for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
+            const page = await pdf.getPage(pageNum);
+            const content = await page.getTextContent();
+            const strings = content.items.map(item => item.str);
+            extractedText += strings.join(' ') + '\n\n';
+          }
+          if (!extractedText.trim()) {
+            throw new Error('No selectable text found in PDF');
+          }
+          state.rawNotes = extractedText.trim();
+          document.getElementById('inputStudyNotes').value = state.rawNotes;
+          statusPill.textContent = `Extracted ${maxPages} PDF page(s)`;
+          showToast(`Parsed ${maxPages} page(s) from ${file.name}! Playing your new Short now.`, 'success');
+        } else {
+          const text = await file.text();
+          state.rawNotes = text.trim();
+          document.getElementById('inputStudyNotes').value = state.rawNotes;
+          statusPill.textContent = `Loaded ${file.name}`;
+          showToast(`Loaded study notes from ${file.name}! Playing your new Short.`, 'success');
+        }
+
+        generateScenesFromStudyNotes();
+        switchTab('shorts');
+        playReel();
+      } catch (err) {
+        statusPill.textContent = 'Upload error';
+        showToast(`Could not parse file: ${err.message}`, 'warn');
+      }
+    }
+
+    // =========================================================================
+    // SAVED LIBRARY MANAGEMENT
+    // =========================================================================
+    function loadSavedLibrary() {
+      try {
+        const raw = localStorage.getItem('studyshorts_saved_reels_v1');
+        if (raw) {
+          state.savedReels = JSON.parse(raw);
+        }
+      } catch (e) {
+        state.savedReels = [];
+      }
+      if (state.savedReels.length === 0) {
+        state.savedReels = [{
+          id: 'seed_1',
+          title: STUDY_PRESETS.cn_tcp.title,
+          subject: STUDY_PRESETS.cn_tcp.subject,
+          notes: STUDY_PRESETS.cn_tcp.notes,
+          visualTheme: 'matrix',
+          savedAt: 'Preset Module'
+        }];
+      }
+      renderSavedLibrary();
+    }
+
+    function saveCurrentReelToLibrary() {
+      const item = {
+        id: 'reel_' + Date.now(),
+        title: state.topicTitle,
+        subject: state.subjectTag,
+        notes: state.rawNotes,
+        visualTheme: state.visualTheme,
+        savedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      state.savedReels.unshift(item);
+      try {
+        localStorage.setItem('studyshorts_saved_reels_v1', JSON.stringify(state.savedReels.slice(0, 12)));
+      } catch (e) {}
+      renderSavedLibrary();
+      showToast(`Saved "${state.topicTitle}" to your library!`, 'success');
+    }
+
+    function renderSavedLibrary() {
+      document.getElementById('savedCountBadge').textContent = String(state.savedReels.length);
+      const grid = document.getElementById('libraryGrid');
+      grid.innerHTML = '';
+
+      state.savedReels.forEach((item, idx) => {
+        const card = document.createElement('div');
+        card.className = 'p-4 rounded-2xl bg-white border border-slate-200 hover:border-pink-400 shadow-sm transition flex flex-col justify-between gap-3';
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between text-[11px] text-violet-600 font-extrabold uppercase">
+              <span>${escapeHtml(item.subject)}</span>
+              <span class="text-slate-400 font-mono-code">${escapeHtml(item.savedAt)}</span>
+            </div>
+            <h3 class="text-sm font-extrabold text-slate-900 mt-1">${escapeHtml(item.title)}</h3>
+            <p class="text-xs text-slate-500 line-clamp-2 mt-1">${escapeHtml(item.notes)}</p>
+          </div>
+          <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+            <button type="button" data-load-idx="${idx}" class="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-gradient-to-r from-violet-600 to-pink-500 text-white shadow-sm transition">
+              Watch Short
+            </button>
+            <button type="button" data-delete-idx="${idx}" class="text-xs font-bold text-slate-400 hover:text-rose-500 transition">
+              Remove
+            </button>
+          </div>
+        `;
+        card.querySelector('[data-load-idx]').addEventListener('click', () => {
+          state.topicTitle = item.title;
+          state.subjectTag = item.subject;
+          state.rawNotes = item.notes;
+          state.visualTheme = item.visualTheme || 'cyber';
+          document.getElementById('inputTopicTitle').value = state.topicTitle;
+          document.getElementById('inputSubjectTag').value = state.subjectTag;
+          document.getElementById('inputStudyNotes').value = state.rawNotes;
+          document.getElementById('selectVisualTheme').value = state.visualTheme;
+          generateScenesFromStudyNotes();
+          switchTab('shorts');
+          playReel();
+          showToast(`Playing "${item.title}"!`, 'info');
+        });
+        card.querySelector('[data-delete-idx]').addEventListener('click', () => {
+          state.savedReels.splice(idx, 1);
+          try {
+            localStorage.setItem('studyshorts_saved_reels_v1', JSON.stringify(state.savedReels));
+          } catch (e) {}
+          renderSavedLibrary();
+        });
+        grid.appendChild(card);
+      });
+    }
+
+    // =========================================================================
+    // TOP NAVIGATION DRAWER / SHORTS MODE SWITCHING
+    // =========================================================================
+    function switchTab(tabName) {
+      state.activeTab = tabName;
+      const drawerContainer = document.getElementById('topDrawerContainer');
+      const backdrop = document.getElementById('topDrawerBackdrop');
+      const drawerTitle = document.getElementById('drawerTitleLabel');
+
+      const views = {
+        studio: document.getElementById('viewStudio'),
+        timeline: document.getElementById('viewTimeline'),
+        library: document.getElementById('viewLibrary')
+      };
+
+      const btnShorts = document.getElementById('btnWatchShorts');
+      const buttons = {
+        studio: document.getElementById('tabBtnStudio'),
+        timeline: document.getElementById('tabBtnTimeline'),
+        library: document.getElementById('tabBtnLibrary')
+      };
+
+      const activeBtnClass = 'px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all bg-gradient-to-r from-violet-600 to-pink-500 text-white shadow-sm flex items-center gap-1.5';
+      const inactiveBtnClass = 'px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all text-slate-700 hover:bg-white hover:text-violet-600 flex items-center gap-1.5';
+
+      if (tabName === 'shorts') {
+        drawerContainer.classList.add('hidden');
+        backdrop.classList.add('hidden');
+        btnShorts.className = activeBtnClass;
+        Object.keys(views).forEach(k => {
+          views[k].classList.add('hidden');
+          buttons[k].className = inactiveBtnClass;
+        });
+      } else {
+        drawerContainer.classList.remove('hidden');
+        backdrop.classList.remove('hidden');
+        btnShorts.className = inactiveBtnClass;
+
+        const titles = {
+          studio: '☁️ Upload Study Materials (.PDF, .TXT, .MD) & Customize Short',
+          timeline: '🎞️ Edit Scene Storyboard, Captions & Quiz',
+          library: '📚 Your Saved Vertical Study Reels'
+        };
+        drawerTitle.textContent = titles[tabName] || 'Studio Options';
+
+        Object.keys(views).forEach(k => {
+          if (k === tabName) {
+            views[k].classList.remove('hidden');
+            buttons[k].className = activeBtnClass;
+          } else {
+            views[k].classList.add('hidden');
+            buttons[k].className = inactiveBtnClass;
+          }
+        });
+      }
+    }
+
+    function loadPresetByKey(key, allPresetBtns) {
+      const mod = STUDY_PRESETS[key];
+      if (!mod) return;
+      state.topicTitle = mod.title;
+      state.subjectTag = mod.subject;
+      state.rawNotes = mod.notes;
+      document.getElementById('inputTopicTitle').value = mod.title;
+      document.getElementById('inputSubjectTag').value = mod.subject;
+      document.getElementById('inputStudyNotes').value = mod.notes;
+      document.getElementById('uploadStatusPill').textContent = `Loaded Preset: ${key.toUpperCase()}`;
+
+      allPresetBtns.forEach(b => {
+        if (b.getAttribute('data-preset') === key) {
+          b.classList.add('feed-pill-active');
+        } else {
+          b.classList.remove('feed-pill-active');
+        }
+      });
+
+      generateScenesFromStudyNotes();
+      switchTab('shorts');
+      playReel();
+      showToast(`Now playing: "${mod.title}"!`, 'success');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('inputStudyNotes').value = state.rawNotes;
+      generateScenesFromStudyNotes();
+      loadSavedLibrary();
+
+      // Ensure app opens directly to the Shorts feed view
+      switchTab('shorts');
+
+      if (state.animFrameId) cancelAnimationFrame(state.animFrameId);
+      state.animFrameId = requestAnimationFrame(renderCanvasFrame);
+
+      // Top Navigation Buttons
+      document.getElementById('btnLogoHome').addEventListener('click', () => switchTab('shorts'));
+      document.getElementById('btnWatchShorts').addEventListener('click', () => switchTab('shorts'));
+      document.getElementById('tabBtnStudio').addEventListener('click', () => {
+        switchTab(state.activeTab === 'studio' ? 'shorts' : 'studio');
+      });
+      document.getElementById('tabBtnTimeline').addEventListener('click', () => {
+        switchTab(state.activeTab === 'timeline' ? 'shorts' : 'timeline');
+      });
+      document.getElementById('tabBtnLibrary').addEventListener('click', () => {
+        switchTab(state.activeTab === 'library' ? 'shorts' : 'library');
+      });
+      document.getElementById('btnCloseDrawer').addEventListener('click', () => switchTab('shorts'));
+      document.getElementById('topDrawerBackdrop').addEventListener('click', () => switchTab('shorts'));
+
+      // Quick Upload Triggers in Shorts Feed
+      document.getElementById('btnQuickUploadTop').addEventListener('click', () => switchTab('studio'));
+      document.getElementById('btnDockUpload').addEventListener('click', () => switchTab('studio'));
+      document.getElementById('btnDockEditScenes').addEventListener('click', () => switchTab('timeline'));
+
+      // Right Dock: Cycle Color Theme
+      const themeKeys = Object.keys(THEMES);
+      document.getElementById('btnDockCycleTheme').addEventListener('click', () => {
+        const curIdx = themeKeys.indexOf(state.visualTheme);
+        const nextKey = themeKeys[(curIdx + 1) % themeKeys.length];
+        state.visualTheme = nextKey;
+        document.getElementById('selectVisualTheme').value = nextKey;
+        document.getElementById('dockThemeSubtext').textContent = `Theme: ${THEMES[nextKey].name}`;
+        playTransitionSound(600, 'sine', 0.12);
+        showToast(`Switched Short color theme to ${THEMES[nextKey].name}!`, 'info');
+      });
+
+      // Right Dock: Swipe to Next Study Short
+      const allPresetBtns = document.querySelectorAll('.preset-btn');
+      document.getElementById('btnDockNextShort').addEventListener('click', () => {
+        state.currentPresetIdx = (state.currentPresetIdx + 1) % PRESET_KEYS.length;
+        const nextKey = PRESET_KEYS[state.currentPresetIdx];
+        loadPresetByKey(nextKey, allPresetBtns);
+      });
+
+      // File Upload & Drag-and-Drop
+      const dropZone = document.getElementById('dropZone');
+      const fileInput = document.getElementById('fileInput');
+      dropZone.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', e => {
+        if (e.target.files && e.target.files[0]) {
+          handleUploadedFile(e.target.files[0]);
+        }
+      });
+      dropZone.addEventListener('dragover', e => {
+        e.preventDefault();
+        dropZone.classList.add('dropzone-hover');
+      });
+      dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dropzone-hover');
+      });
+      dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.classList.remove('dropzone-hover');
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+          handleUploadedFile(e.dataTransfer.files[0]);
+        }
+      });
+
+      // Preset Modules Pills
+      allPresetBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const key = btn.getAttribute('data-preset');
+          state.currentPresetIdx = Math.max(0, PRESET_KEYS.indexOf(key));
+          loadPresetByKey(key, allPresetBtns);
+        });
+      });
+
+      // Clear Notes
+      document.getElementById('btnClearText').addEventListener('click', () => {
+        document.getElementById('inputStudyNotes').value = '';
+        state.rawNotes = '';
+        document.getElementById('wordCountStats').textContent = '0 words';
+      });
+
+      // Text Inputs Live Binding
+      document.getElementById('inputTopicTitle').addEventListener('input', e => {
+        state.topicTitle = e.target.value;
+        document.getElementById('activeReelTitleHeading').textContent = state.topicTitle;
+      });
+      document.getElementById('inputSubjectTag').addEventListener('input', e => {
+        state.subjectTag = e.target.value;
+        document.getElementById('activeSubjectPill').textContent = state.subjectTag;
+      });
+      document.getElementById('inputStudyNotes').addEventListener('input', e => {
+        state.rawNotes = e.target.value;
+        const wc = state.rawNotes.trim().split(/\s+/).filter(Boolean).length;
+        document.getElementById('wordCountStats').textContent = `${wc} words`;
+      });
+
+      // Style Selectors
+      document.getElementById('selectReelMode').addEventListener('change', e => {
+        state.reelMode = e.target.value;
+        generateScenesFromStudyNotes();
+      });
+      document.getElementById('selectVisualTheme').addEventListener('change', e => {
+        state.visualTheme = e.target.value;
+        const th = THEMES[state.visualTheme];
+        if (th) document.getElementById('dockThemeSubtext').textContent = `Theme: ${th.name}`;
+        playTransitionSound(580, 'sine', 0.1);
+      });
+      document.getElementById('selectCaptionStyle').addEventListener('change', e => {
+        state.captionStyle = e.target.value;
+      });
+      document.getElementById('selectVoiceRate').addEventListener('input', e => {
+        state.voiceRate = parseFloat(e.target.value) || 1.1;
+        document.getElementById('rateLabel').textContent = state.voiceRate.toFixed(2) + 'x';
+      });
+      document.getElementById('toggleVoiceover').addEventListener('change', e => {
+        state.voiceEnabled = e.target.checked;
+        if (!state.voiceEnabled) stopSpeech();
+      });
+      document.getElementById('toggleBgSynth').addEventListener('change', e => {
+        state.synthEnabled = e.target.checked;
+      });
+
+      // Generate Reel Button (Generates and closes drawer to show the Short immediately)
+      document.getElementById('btnGenerateReel').addEventListener('click', () => {
+        state.topicTitle = document.getElementById('inputTopicTitle').value;
+        state.subjectTag = document.getElementById('inputSubjectTag').value;
+        state.rawNotes = document.getElementById('inputStudyNotes').value;
+        generateScenesFromStudyNotes();
+        switchTab('shorts');
+        playReel();
+        showToast('Compiled your new 9:16 Study Short!', 'success');
+      });
+
+      // Scene Timeline Editor Live Bindings
+      ['editSceneTag', 'editSceneHeadline', 'editSceneDiagram', 'editSceneNarration', 'editSceneBullets'].forEach(id => {
+        document.getElementById(id).addEventListener('input', () => {
+          const sc = state.scenes[state.activeSceneIndex];
+          if (!sc) return;
+          sc.tag = document.getElementById('editSceneTag').value;
+          sc.headline = document.getElementById('editSceneHeadline').value;
+          sc.diagramType = document.getElementById('editSceneDiagram').value;
+          sc.narration = document.getElementById('editSceneNarration').value;
+          sc.bullets = document.getElementById('editSceneBullets').value
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean);
+          sc.duration = calcDuration(sc.narration);
+          renderSceneList();
+          renderQuickSceneJumpList();
+          updateTimingLabels();
+        });
+      });
+
+      document.getElementById('btnAddScene').addEventListener('click', () => {
+        const newIdx = state.scenes.length + 1;
+        state.scenes.push({
+          id: 'sc_' + Date.now(),
+          tag: `0${newIdx} • CUSTOM CARD`,
+          headline: 'Key Exam Insight',
+          diagramType: 'pillars',
+          narration: 'Add your custom study explanation here and watch the kinetic captions sync automatically.',
+          bullets: ['Point 1', 'Point 2', 'Point 3', 'Point 4'],
+          duration: 5.0
+        });
+        selectScene(state.scenes.length - 1, false);
+        showToast('Added new scene to timeline!', 'info');
+      });
+
+      document.getElementById('btnDeleteScene').addEventListener('click', () => {
+        if (state.scenes.length <= 1) {
+          showToast('A short must have at least 1 scene.', 'warn');
+          return;
+        }
+        state.scenes.splice(state.activeSceneIndex, 1);
+        state.activeSceneIndex = Math.max(0, state.activeSceneIndex - 1);
+        populateSceneEditor(state.activeSceneIndex);
+        renderSceneList();
+        renderQuickSceneJumpList();
+        updateTimingLabels();
+        showToast('Removed scene from timeline.', 'info');
+      });
+
+      // Player Controls
+      canvas.addEventListener('click', togglePlayPause);
+      document.getElementById('btnPlayPause').addEventListener('click', togglePlayPause);
+      document.getElementById('btnPrevScene').addEventListener('click', () => {
+        selectScene(Math.max(0, state.activeSceneIndex - 1), true);
+      });
+      document.getElementById('btnNextScene').addEventListener('click', () => {
+        selectScene(Math.min(state.scenes.length - 1, state.activeSceneIndex + 1), true);
+      });
+      document.getElementById('btnRestartReel').addEventListener('click', () => {
+        selectScene(0, true);
+        if (!state.isPlaying) playReel();
+      });
+
+      document.getElementById('btnMuteAudio').addEventListener('click', () => {
+        state.isMuted = !state.isMuted;
+        document.getElementById('iconAudioUnmuted').classList.toggle('hidden', state.isMuted);
+        document.getElementById('iconAudioMuted').classList.toggle('hidden', !state.isMuted);
+        if (state.isMuted) stopSpeech();
+      });
+
+      document.getElementById('timelineScrubber').addEventListener('input', e => {
+        const pct = parseFloat(e.target.value) / 100;
+        const total = getTotalDuration();
+        const targetSec = pct * total;
+        let accum = 0;
+        for (let i = 0; i < state.scenes.length; i++) {
+          if (accum + state.scenes[i].duration >= targetSec) {
+            state.activeSceneIndex = i;
+            state.sceneElapsedSec = Math.max(0, targetSec - accum);
+            populateSceneEditor(i);
+            renderSceneList();
+            renderQuickSceneJumpList();
+            break;
+          }
+          accum += state.scenes[i].duration;
+        }
+      });
+
+      // Top Bar Actions
+      document.getElementById('btnSaveDeck').addEventListener('click', saveCurrentReelToLibrary);
+      document.getElementById('btnExportVideo').addEventListener('click', startWebmExport);
+      document.getElementById('btnExportSrt').addEventListener('click', exportSrtCaptions);
+      document.getElementById('btnExportJsonPack').addEventListener('click', exportJsonPack);
+    });
+  </script>
+</body>
+</html>
